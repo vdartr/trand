@@ -1,0 +1,36 @@
+from flask import Flask, request, jsonify
+import os
+import cv2
+
+app = Flask(__name__)
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    if 'images[]' not in request.files:
+        return jsonify({'error': 'No images found'}), 400
+    
+    images = request.files.getlist('images[]')
+    video_name = 'output_video.avi'
+    
+    # Задаем параметры видео
+    frame_width = 640
+    frame_height = 480
+    fps = 1  # Частота кадров в видео (1 кадр в секунду)
+    
+    # Создаем объект VideoWriter для записи видео
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter(video_name, fourcc, fps, (frame_width, frame_height))
+    
+    # Проходимся по каждому изображению, изменяем его размер и добавляем кадр в видео
+    for img in images:
+        img = cv2.imdecode(np.frombuffer(img.read(), np.uint8), -1)
+        resized_img = cv2.resize(img, (frame_width, frame_height))
+        out.write(resized_img)
+    
+    # Закрываем видеофайл
+    out.release()
+    
+    return jsonify({'success': 'Video created successfully', 'video_name': video_name})
+
+if __name__ == '__main__':
+    app.run(debug=True)
